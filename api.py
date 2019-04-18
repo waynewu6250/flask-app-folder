@@ -2,6 +2,7 @@ import flask
 from flask import request, jsonify
 import MySQLdb
 import random
+import requests
 
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
@@ -12,6 +13,18 @@ def query_handle(query):
     cursor.execute(query)
     return db, cursor
 
+def send_simple_message(name, email):
+	return requests.post("https://api.mailgun.net/v3/sandbox5c8a252c2f55464d8922b3783cf74c44.mailgun.org/messages", \
+                         auth=("api", "321ed7a95bc0c54369e32f35c3a037d3-3fb021d1-04b3390c"), \
+                         data={"from": "Mailgun Sandbox <postmaster@sandbox5c8a252c2f55464d8922b3783cf74c44.mailgun.org>", \
+                         "to": "{} <{}>".format(name, email), \
+                         "subject": "Hello {}".format(name), \
+                         "text": "Congratulations {}, you just complete a task!  You are truly awesome!".format(name)})
+
+
+#################################################################
+##################      START APPLICATION     ###################
+#################################################################
 
 # create new task and put it in mysql DB
 @app.route('/', methods=["POST"])
@@ -28,10 +41,11 @@ def create_task():
         new_id = random.randint(1,101)
     
     new_task = {'id': new_id}
-    new_task['title'] = request.json['title']+" "+str(new_id)
-    new_task['is_completed'] = request.json['is_completed']
+    new_task['title'] = request.json['title']+" task "+str(new_id)
+    new_task['notify'] = request.json['notify']
 
-    query = "INSERT INTO tasks(id, title, is_completed) VALUES (%s, '%s', %s)" % (new_task['id'], new_task['title'], new_task['is_completed'])
+    query = "INSERT INTO tasks(id, title, is_completed, notify) VALUES (%s, '%s', 0, '%s')" % \
+            (new_task['id'], new_task['title'], new_task['notify'])
     db, cursor = query_handle(query)
     db.commit()
     db.close()
@@ -51,6 +65,7 @@ def list_all():
         task = {'id': row[0]}
         task['title'] = row[1]
         task['is_completed'] = row[2]
+        task['notify'] = row[3]
         tasks.append(task)
     db.close()
 
@@ -67,7 +82,7 @@ def get_task(id):
     results = cursor.fetchall()
     for row in results:
         if row[0] == int(id):
-            response.append({'id': row[0], 'title': row[1], 'is_completed': row[2]})
+            response.append({'id': row[0], 'title': row[1], 'is_completed': row[2], 'notify': row[3]})
             break
     db.close()
         
@@ -81,8 +96,10 @@ def get_task(id):
 def edit_task(id):
 
     new_task = {'id': id}
-    new_task['title'] = request.json['title']+" "+str(id)
+    new_task['title'] = request.json['title']+" task "+str(id)
     new_task['is_completed'] = request.json['is_completed']
+    new_task['notify'] = request.json['notify']
+    name = request.json['name']
     
     flag = False
     query =  "SELECT * FROM tasks"
@@ -90,12 +107,17 @@ def edit_task(id):
     results = cursor.fetchall()
     for row in results:
         if row[0] == int(id):
-            query = "UPDATE tasks SET title = '%s', is_completed = %s WHERE id = %s" % (new_task['title'], new_task['is_completed'], new_task['id'])
+            old_value = row[2]
+            query = "UPDATE tasks SET title = '%s', is_completed = %s, notify = '%s' WHERE id = %s" % \
+                    (new_task['title'], new_task['is_completed'], new_task['notify'], new_task['id'])
             cursor.execute(query)
             db.commit()
             flag = True
             break
     db.close()
+
+    if old_value == 0 and new_task['is_completed'] == 1:
+        send_simple_message(name, new_task["notify"])
     
     if not flag:
         return jsonify("error: There is no task at that id"), 404
