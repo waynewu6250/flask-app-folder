@@ -10,6 +10,14 @@ app.config["DEBUG"] = True
 def query_handle(query):
     db = MySQLdb.connect("mysql-server", "root", "secret", "testdb")
     cursor = db.cursor()
+    # If not such database, create one
+    try:
+        cursor.execute("CREATE DATABASE testdb")
+        cursor.execute("USE testdb")
+        cursor.execute("CREATE TABLE tasks (id INT PRIMARY KEY AUTO_INCREMENT,title VARCHAR(64) NOT NULL,is_completed BOOLEAN, notify VARCHAR(64));")
+    except:
+        pass
+    
     cursor.execute(query)
     return db, cursor
 
