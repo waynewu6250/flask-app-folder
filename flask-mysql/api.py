@@ -8,12 +8,11 @@ app = flask.Flask(__name__)
 app.config["DEBUG"] = True
 
 def query_handle(query):
-    db = MySQLdb.connect("mysql-server", "root", "secret", "testdb")
+    db = MySQLdb.connect("mysql-server", "root", "secret", "mysql")
     cursor = db.cursor()
     # If not such database, create one
     try:
-        cursor.execute("CREATE DATABASE testdb")
-        cursor.execute("USE testdb")
+        cursor.execute("USE mysql")
         cursor.execute("CREATE TABLE tasks (id INT PRIMARY KEY AUTO_INCREMENT,title VARCHAR(64) NOT NULL,is_completed BOOLEAN, notify VARCHAR(64));")
     except:
         pass
