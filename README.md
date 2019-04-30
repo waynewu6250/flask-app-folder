@@ -7,7 +7,7 @@ Please follow to the link and get more explanations:<br>
 https://medium.com/@waynewu_25577/docker-flask-mysql-%E5%9F%BA%E6%9C%AC%E4%B8%B2%E6%8E%A5%E6%95%99%E5%AD%B8-77eff0871954
 
 1. To use:
-First open your terminal and locate in flask-redis folder, then type in:
+First open your terminal and locate in flask-mysql folder, then type in:
 ```
 bash run.sh
 ```
@@ -38,7 +38,7 @@ Then you can see some data on your browser. And also you can log in your databas
 ```
 docker run -it --rm --network my-network mysql:5.7 sh -c 'exec mysql -h"mysql-server" -P"3306" -uroot -p"secret"'
 ```
-We store our data in "mysql" database. 
+We store our data in "mysql" database in docker container. 
 <br><br>
 
 
